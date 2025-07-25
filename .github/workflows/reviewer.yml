@@ -1,0 +1,34 @@
+name: AI Code Reviewer
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  review-code:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Install dependencies
+        run: pip install PyGithub boto3
+
+      - name: Run AI Reviewer
+        env:
+          BEDROCK_REGION: us-east-1
+          BEDROCK_MODEL_ID: anthropic.claude-3-sonnet-20240229-v1:0
+          KNOWLEDGE_BASE_ID: ${{ secrets.KNOWLEDGE_BASE_ID }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: python reviewer/reviewer.py
