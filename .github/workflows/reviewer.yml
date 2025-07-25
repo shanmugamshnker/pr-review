@@ -4,33 +4,42 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   review-code:
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-      contents: read
 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch base branch
+        run: |
+          git fetch origin main:refs/remotes/origin/main
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.11
+          python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install PyGithub boto3
+        run: pip install -r reviewer/requirements.txt
 
-      - name: Run AI Reviewer
+      - name: Run reviewer
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          BEDROCK_REGION: us-east-1
-          BEDROCK_MODEL_ID: anthropic.claude-3-sonnet-20240229-v1:0
+
+          BEDROCK_REGION: ${{ secrets.BEDROCK_REGION }}
+          BEDROCK_MODEL_ID: ${{ secrets.BEDROCK_MODEL_ID }}
           KNOWLEDGE_BASE_ID: ${{ secrets.KNOWLEDGE_BASE_ID }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+          GITHUB_TOKEN: ${{ secrets.GITHUB_PAT }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_PR_NUMBER: ${{ github.event.pull_request.number }}
         run: python reviewer/reviewer.py
