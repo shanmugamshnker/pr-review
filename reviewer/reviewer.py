@@ -4,63 +4,62 @@ from prompt_builder import build_prompt
 from llm_client import call_bedrock
 from github_client import post_inline_comment
 
-def get_changed_files_from_git():
+def get_files_to_review():
+    """
+    Returns a dictionary of {file_path: {lines: [code_lines]}}
+    - For new files (A): review full content.
+    - For modified files (M): review diff lines only.
+    """
+    base = os.getenv("GITHUB_BASE_REF", "origin/main")
     try:
-        base = os.getenv("GITHUB_BASE_REF", "origin/main")
-        head = "HEAD"
+        # Step 1: Get file change status (A = Added, M = Modified)
+        result = subprocess.run(
+            f"git diff --name-status {base} HEAD",
+            shell=True, capture_output=True, text=True, check=True
+        )
+        file_status_lines = result.stdout.strip().splitlines()
+        review_targets = {}
 
-        print(f"🔍 Running diff: git diff {base} {head}")
-        diff_cmd = f"git diff --unified=5 --no-prefix {base} {head}"
-        result = subprocess.run(diff_cmd, shell=True, capture_output=True, text=True, check=True)
+        for line in file_status_lines:
+            parts = line.strip().split(maxsplit=1)
+            if len(parts) != 2:
+                continue
+            status, filename = parts
+            if not filename.endswith(".py"):
+                continue
 
-        if not result.stdout.strip():
-            raise ValueError("Empty diff")
-
-        return result.stdout
-
-    except Exception as e:
-        print(f"⚠️ Git diff failed: {e}")
-        print("🔁 Falling back to full scan of all .py files")
-        return get_all_python_files_as_diff()
-
-def get_all_python_files_as_diff():
-    """
-    Fallback mechanism: Simulate a diff for all .py files.
-    """
-    simulated_diff = ""
-    for root, _, files in os.walk("."):
-        for fname in files:
-            if fname.endswith(".py") and "reviewer.py" not in fname:
-                path = os.path.join(root, fname)
+            if status == "A":
                 try:
-                    with open(path, "r", encoding="utf-8") as f:
-                        lines = f.readlines()
-                        simulated_diff += f"+++ {path}\n"
-                        for line in lines:
-                            simulated_diff += f"+{line}"
+                    with open(filename, "r", encoding="utf-8") as f:
+                        review_targets[filename] = {"lines": f.readlines()}
                 except Exception as e:
-                    print(f"❌ Failed to read {path}: {e}")
-    return simulated_diff
+                    print(f"❌ Failed to read new file {filename}: {e}")
 
-def parse_unified_diff(diff_text):
-    files = {}
-    current_file = None
-    for line in diff_text.splitlines():
-        if line.startswith("+++ ") and not line.startswith("+++ /dev/null"):
-            current_file = line.replace("+++ ", "").strip()
-            files[current_file] = {"lines": []}
-        elif current_file and (line.startswith("+") and not line.startswith("+++")):
-            files[current_file]["lines"].append(line[1:])
-    return files
+            elif status == "M":
+                try:
+                    # Get only the changed lines
+                    diff_result = subprocess.run(
+                        f"git diff --unified=5 --no-prefix {base} HEAD -- {filename}",
+                        shell=True, capture_output=True, text=True, check=True
+                    )
+                    diff_lines = []
+                    for diff_line in diff_result.stdout.strip().splitlines():
+                        if diff_line.startswith("+") and not diff_line.startswith("+++"):
+                            diff_lines.append(diff_line[1:])
+                    if diff_lines:
+                        review_targets[filename] = {"lines": diff_lines}
+                except Exception as e:
+                    print(f"❌ Failed to get diff for {filename}: {e}")
+
+        return review_targets
+
+    except subprocess.CalledProcessError as e:
+        print("❌ Failed to get git diff:", e.stderr)
+        return {}
 
 def main():
     print("🚀 Starting AI Code Reviewer...")
-    diff_text = get_changed_files_from_git()
-    if not diff_text:
-        print("ℹ️ No changes detected or error in git diff.")
-        return
-
-    changed_files = parse_unified_diff(diff_text)
+    changed_files = get_files_to_review()
     if not changed_files:
         print("ℹ️ No relevant file changes found.")
         return
@@ -71,11 +70,18 @@ def main():
             print(f"🔍 Reviewing file: {file_path}...")
             prompt = build_prompt(code, file_path, runtime="python")
             comments = call_bedrock(prompt)
+
             for comment in comments:
                 try:
-                    post_inline_comment(file_path, comment["line"], comment["comment"], comment.get("suggestion"))
+                    post_inline_comment(
+                        file_path=file_path,
+                        line=comment["line"],
+                        comment=comment["comment"],
+                        suggestion=comment.get("suggestion")
+                    )
                 except Exception as e:
                     print(f"⚠️ Failed to post comment on {file_path}:{comment['line']}: {e}")
+
         except Exception as e:
             print(f"❌ Error reviewing {file_path}: {e}")
 
