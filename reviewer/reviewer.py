@@ -8,12 +8,39 @@ def get_changed_files_from_git():
     try:
         base = os.getenv("GITHUB_BASE_REF", "origin/main")
         head = "HEAD"
+
+        print(f"🔍 Running diff: git diff {base} {head}")
         diff_cmd = f"git diff --unified=5 --no-prefix {base} {head}"
         result = subprocess.run(diff_cmd, shell=True, capture_output=True, text=True, check=True)
+
+        if not result.stdout.strip():
+            raise ValueError("Empty diff")
+
         return result.stdout
-    except subprocess.CalledProcessError as e:
-        print("❌ Failed to get git diff:", e.stderr)
-        return ""
+
+    except Exception as e:
+        print(f"⚠️ Git diff failed: {e}")
+        print("🔁 Falling back to full scan of all .py files")
+        return get_all_python_files_as_diff()
+
+def get_all_python_files_as_diff():
+    """
+    Fallback mechanism: Simulate a diff for all .py files.
+    """
+    simulated_diff = ""
+    for root, _, files in os.walk("."):
+        for fname in files:
+            if fname.endswith(".py") and "reviewer.py" not in fname:
+                path = os.path.join(root, fname)
+                try:
+                    with open(path, "r", encoding="utf-8") as f:
+                        lines = f.readlines()
+                        simulated_diff += f"+++ {path}\n"
+                        for line in lines:
+                            simulated_diff += f"+{line}"
+                except Exception as e:
+                    print(f"❌ Failed to read {path}: {e}")
+    return simulated_diff
 
 def parse_unified_diff(diff_text):
     files = {}
