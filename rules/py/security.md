@@ -1,9 +1,18 @@
-Avoid using eval() or exec() — dangerous with untrusted input.
+# Python - Security Rules
 
-Never hardcode secrets like passwords, API keys, tokens.
+These rules guide secure Python programming and must be enforced in all PRs.
 
-Use subprocess.run() with shell=False for external calls.
+1. **Avoid `eval()` or `exec()`**
+   - These functions allow arbitrary code execution. Only use if absolutely safe and sandboxed.
 
-Validate file paths to prevent path traversal attacks.
+2. **No hardcoded credentials**
+   - Use environment variables, AWS Secrets Manager, or encrypted configs.
 
-Use secrets or hashlib with SHA-256+ for cryptographic needs.
+3. **Use subprocess safely**
+   - Always prefer `subprocess.run()` with `shell=False`.
+   - Avoid `os.system()` or `shell=True` unless sanitized.
+
+4. **Hashing and cryptography**
+   - Avoid `md5` and `sha1`.
+   - Use `secrets.token_hex()` for randomness.
+   - Use `bcrypt` or `hashlib.sha256()` for hashing passwords.
