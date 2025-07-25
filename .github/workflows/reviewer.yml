@@ -28,8 +28,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install -r reviewer/requirements.txt
-
+        run: pip install PyGithub boto3
       - name: Run reviewer
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
