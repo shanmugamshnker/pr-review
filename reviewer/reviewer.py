@@ -10,9 +10,10 @@ def get_files_to_review():
     - For new files (A): review full content.
     - For modified files (M): review diff lines only.
     """
-    base = os.getenv("GITHUB_BASE_REF", "origin/main")
+    raw_base = os.getenv("GITHUB_BASE_REF", "main")
+    base = f"origin/{raw_base}" if not raw_base.startswith("origin/") else raw_base
+
     try:
-        # Step 1: Get file change status (A = Added, M = Modified)
         result = subprocess.run(
             f"git diff --name-status {base} HEAD",
             shell=True, capture_output=True, text=True, check=True
@@ -24,8 +25,11 @@ def get_files_to_review():
             parts = line.strip().split(maxsplit=1)
             if len(parts) != 2:
                 continue
+
             status, filename = parts
-            if not filename.endswith(".py"):
+            if status not in {"A", "M"}:
+                continue
+            if not filename.lower().endswith(".py"):
                 continue
 
             if status == "A":
@@ -37,15 +41,14 @@ def get_files_to_review():
 
             elif status == "M":
                 try:
-                    # Get only the changed lines
                     diff_result = subprocess.run(
                         f"git diff --unified=5 --no-prefix {base} HEAD -- {filename}",
                         shell=True, capture_output=True, text=True, check=True
                     )
-                    diff_lines = []
-                    for diff_line in diff_result.stdout.strip().splitlines():
-                        if diff_line.startswith("+") and not diff_line.startswith("+++"):
-                            diff_lines.append(diff_line[1:])
+                    diff_lines = [
+                        line[1:] for line in diff_result.stdout.splitlines()
+                        if line.startswith("+") and not line.startswith("+++")
+                    ]
                     if diff_lines:
                         review_targets[filename] = {"lines": diff_lines}
                 except Exception as e:
@@ -64,13 +67,20 @@ def main():
         print("ℹ️ No relevant file changes found.")
         return
 
+    print(f"📁 {len(changed_files)} file(s) to review.")
+
     for file_path, data in changed_files.items():
         try:
             code = "\n".join(data["lines"])
             print(f"🔍 Reviewing file: {file_path}...")
-            prompt = build_prompt(code, file_path, runtime="python")
-            comments = call_bedrock(prompt)
 
+            prompt = build_prompt(code, file_path, runtime="python")
+
+            if os.getenv("DRY_RUN") == "1":
+                print("📝 Prompt:\n", prompt)
+                continue
+
+            comments = call_bedrock(prompt)
             for comment in comments:
                 try:
                     post_inline_comment(
