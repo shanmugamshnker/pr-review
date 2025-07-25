@@ -2,7 +2,7 @@ import os
 from github import Github
 
 def post_inline_comment(file_path: str, line: int, comment: str, suggestion: str = None):
-    token = os.getenv("GITHUB_TOKEN")
+    token = os.getenv("PAT")
     repo_name = os.getenv("GITHUB_REPOSITORY")
     pr_number = int(os.getenv("GITHUB_PR_NUMBER"))
 
