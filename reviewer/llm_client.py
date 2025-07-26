@@ -9,14 +9,13 @@ def call_bedrock(prompt: str) -> list:
         response = bedrock_runtime.retrieve_and_generate(
             input={"text": prompt},
             retrieveAndGenerateConfiguration={
-                "type": "KNOWLEDGE_BASE",
-                "knowledgeBaseConfiguration": {
-                    "knowledgeBaseId": os.environ["KNOWLEDGE_BASE_ID"],
-                    "modelArn": os.environ["BEDROCK_MODEL_ID"],
-                    "retrievalConfiguration": {
-                        "vectorSearchConfiguration": {
-                            "numberOfResults": 5
-                        }
+                "inferenceConfiguration": {
+                    "inferenceId": os.environ["BEDROCK_INFERENCE_ARN"]
+                },
+                "knowledgeBaseId": os.environ["KNOWLEDGE_BASE_ID"],
+                "retrievalConfiguration": {
+                    "vectorSearchConfiguration": {
+                        "numberOfResults": 5
                     }
                 }
             }
