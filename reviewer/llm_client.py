@@ -9,27 +9,38 @@ def call_bedrock(prompt: str) -> list:
         response = bedrock_runtime.retrieve_and_generate(
             input={"text": prompt},
             retrieveAndGenerateConfiguration={
-                "inferenceConfiguration": {
-                    "inferenceId": os.environ["BEDROCK_INFERENCE_ARN"]
-                },
-                "knowledgeBaseId": os.environ["KNOWLEDGE_BASE_ID"],
-                "retrievalConfiguration": {
-                    "vectorSearchConfiguration": {
-                        "numberOfResults": 5
+                "type": "KNOWLEDGE_BASE",
+                "knowledgeBaseConfiguration": {
+                    "knowledgeBaseId": os.environ["KNOWLEDGE_BASE_ID"],
+                    "modelArn": os.environ["BEDROCK_INFERENCE_ARN"],  # ✅ Inference Profile ARN
+                    "retrievalConfiguration": {
+                        "vectorSearchConfiguration": {
+                            "numberOfResults": 5
+                            # Optional filter support goes here if needed
+                            # "filter": {
+                            #     "andAll": [
+                            #         {"equals": {"key": "language", "value": "python"}},
+                            #         {"equals": {"key": "pillar", "value": "security"}}
+                            #     ]
+                            # }
+                        }
                     }
                 }
             }
         )
 
-        completion = response["output"]["text"]
-        return parse_comments(completion)
+        output = response.get("output", {}).get("text", "")
+        return parse_comments(output)
 
     except Exception as e:
         print("❌ Bedrock retrieve_and_generate failed:", e)
         return []
 
 def parse_comments(response_text: str) -> list:
-    # ⚠️ Update this parser as per real Claude output format.
+    """
+    Stub parser for Claude output — returns mocked inline comments.
+    Replace with JSON parser once Claude returns real JSON.
+    """
     return [
         {
             "line": 10,
