@@ -3,7 +3,7 @@ from github import Github
 from github.GithubException import GithubException
 
 # Read env vars
-token = os.getenv("GITHUB_TOKEN")
+token = os.getenv("PAT")
 repo_name = os.getenv("GITHUB_REPOSITORY")
 pr_number = int(os.getenv("GITHUB_PR_NUMBER"))
 
