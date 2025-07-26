@@ -37,6 +37,7 @@ jobs:
           BEDROCK_REGION: ${{ secrets.BEDROCK_REGION }}
           BEDROCK_MODEL_ID: ${{ secrets.BEDROCK_MODEL_ID }}
           KNOWLEDGE_BASE_ID: ${{ secrets.KNOWLEDGE_BASE_ID }}
+          BEDROCK_INFERENCE_ARN: ${{ secrets.BEDROCK_INFERENCE_ARN }}
 
           GITHUB_TOKEN: ${{ secrets.GITHUB_PAT }}
           GITHUB_REPOSITORY: ${{ github.repository }}
