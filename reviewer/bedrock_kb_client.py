@@ -3,22 +3,21 @@ import os
 
 def query_rules_by_pillar(language: str, pillar: str) -> str:
     client = boto3.client("bedrock-agent-runtime", region_name=os.getenv("BEDROCK_REGION"))
-    kb_id = os.getenv("KNOWLEDGE_BASE_ID")
 
     try:
         response = client.retrieve(
-            knowledgeBaseId=kb_id,
+            knowledgeBaseId=os.getenv("KNOWLEDGE_BASE_ID"),
             retrievalQuery={"text": f"{language} {pillar} code review rules"},
             retrievalConfiguration={
                 "vectorSearchConfiguration": {
-                    "numberOfResults": 1
+                    "numberOfResults": 1,
+                    "filter": {
+                        "andAll": [
+                            {"equals": {"key": "language", "value": "python"}},
+                            {"equals": {"key": "pillar", "value": "security"}}
+                        ]
+                    }
                 }
-            },
-            filters={  # ✅ Correct here too
-                "andAll": [
-                    {"equals": {"key": "language", "value": "python"}},
-                    {"equals": {"key": "pillar", "value": "security"}}
-                ]
             }
         )
 
