@@ -39,7 +39,7 @@ jobs:
           KNOWLEDGE_BASE_ID: ${{ secrets.KNOWLEDGE_BASE_ID }}
           BEDROCK_INFERENCE_ARN: ${{ secrets.BEDROCK_INFERENCE_ARN }}
 
-          GITHUB_TOKEN: ${{ secrets.PAT }}
+          PAT: ${{ secrets.PAT }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_PR_NUMBER: ${{ github.event.pull_request.number }}
         run: python reviewer/reviewer.py
