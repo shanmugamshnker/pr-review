@@ -7,13 +7,17 @@ def query_rules_by_pillar(language: str, pillar: str) -> str:
 
     response = client.retrieve(
         knowledgeBaseId=kb_id,
-        retrievalQuery={"text": f"{language} {pillar} code review rules"},
-        retrievalConfiguration={"vectorSearchConfiguration": {"numberOfResults": 1}},
-        filters={
-            "andAll": [
-                {"equals": {"key": "language", "value": language}},
-                {"equals": {"key": "pillar", "value": pillar}}
-            ]
+        retrievalQuery={
+            "text": f"{language} {pillar} code review rules"
+        },
+        retrievalConfiguration={
+            "vectorSearchConfiguration": {
+                "numberOfResults": 1
+            },
+            "filters": {
+                "language": [language],
+                "pillar": [pillar]
+            }
         }
     )
 
