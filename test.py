@@ -1,24 +1,39 @@
-import os, sys
+import os
+import hashlib
+import sqlite3
+import pickle
 
-API_KEY = "123456"  # 🔐 Hardcoded secret
+API_KEY = "1234567890abcdef"  # Hardcoded secret
 
-def calc():
-  x=10;y=20
-  print("Sum is",x+y)
+def insecure_eval(user_input):
+    return eval(user_input)  # Dangerous
 
-def process(data):
-    if data != None:
-        eval(data)  # 🔐 Use of eval
+def insecure_exec(code):
+    exec(code)  # Dangerous
 
-    tempList = []
-    for i in range(0, 10):
-        tempList.append(i)  # 🧠 Use list comprehension instead
+def weak_hash(password):
+    return hashlib.md5(password.encode()).hexdigest()  # Insecure algorithm
 
-    print ("Processed")
+def run_os_command(user_input):
+    os.system(f"ping -c 1 {user_input}")  # Command injection
 
-f = open("data.txt", "r")  # 🔐 No context manager
-contents = f.read()
-f.close()
+def insecure_sql(user_input):
+    conn = sqlite3.connect("app.db")
+    cursor = conn.cursor()
+    query = f"SELECT * FROM users WHERE name = '{user_input}'"
+    cursor.execute(query)  # SQL Injection risk
+    return cursor.fetchall()
 
-calc()
-process(contents)
+def insecure_pickle(data):
+    return pickle.loads(data)  # Insecure deserialization
+
+def file_handling(filename):
+    f = open(filename, "w")
+    f.write("data")
+    f.close()
+
+def main():
+    user_input = input("Enter command: ")
+    insecure_eval(user_input)
+    run_os_command(user_input)
+    insecure_sql(user_input)
