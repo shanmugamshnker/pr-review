@@ -1,15 +1,14 @@
 import os
 import subprocess
 from prompt_builder import build_prompt
-from llm_client import call_bedrock
+from llm_client import (
+    call_bedrock_with_kb,
+    call_foundation_model,
+    build_fm_prompt
+)
 from github_client import post_inline_comment
 
 def get_files_to_review():
-    """
-    Returns a dictionary of {file_path: {lines: [code_lines]}}
-    - For new files (A): review full content.
-    - For modified files (M): review diff lines only.
-    """
     raw_base = os.getenv("GITHUB_BASE_REF", "main")
     base = f"origin/{raw_base}" if not raw_base.startswith("origin/") else raw_base
 
@@ -27,9 +26,7 @@ def get_files_to_review():
                 continue
 
             status, filename = parts
-            if status not in {"A", "M"}:
-                continue
-            if not filename.lower().endswith(".py"):
+            if status not in {"A", "M"} or not filename.lower().endswith(".py"):
                 continue
 
             if status == "A":
@@ -75,12 +72,17 @@ def main():
             print(f"🔍 Reviewing file: {file_path}...")
 
             prompt = build_prompt(code, file_path, runtime="python")
+            fm_prompt = build_fm_prompt(code, file_path, runtime="python")
 
             if os.getenv("DRY_RUN") == "1":
-                print("📝 Prompt:\n", prompt)
+                print("📝 RAG Prompt:\n", prompt)
+                print("🧠 FM Prompt:\n", fm_prompt)
                 continue
 
-            comments = call_bedrock(prompt)
+            comments = []
+            comments += call_bedrock_with_kb(prompt)
+            comments += call_foundation_model(fm_prompt)
+
             for comment in comments:
                 try:
                     post_inline_comment(
