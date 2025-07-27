@@ -7,7 +7,6 @@ token = os.getenv("PAT", "").strip()
 repo_name = os.getenv("GITHUB_REPOSITORY", "").strip()
 pr_number_str = os.getenv("GITHUB_PR_NUMBER", "").strip()
 
-# Debug logs
 print("🔧 Environment variables:")
 print(f"  PAT Provided: {'✅' if token else '❌'}")
 print(f"  Repository  : '{repo_name}'")
@@ -39,7 +38,6 @@ def post_inline_comment(file_path, line, comment, suggestion=None):
         if suggestion:
             comment_body += f"\n\n💡 Suggestion:\n```python\n{suggestion}\n```"
 
-        # GitHub API expects line numbers relative to the diff (not always source file)
         review_comments = [{
             "path": file_path,
             "body": comment_body,
