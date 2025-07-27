@@ -13,5 +13,6 @@ def build_prompt(code: str, file_path: str, runtime: str = "python") -> str:
 
     prompt += f"\nCode to review from {file_path}:\n```\n{code}\n```\n"
     prompt += "Respond ONLY in this JSON format:\n"
-    prompt += "[{\"line\": 10, \"pillar\": \"security\", \"comment\": \"Avoid eval.\", \"suggestion\": \"Use ast.literal_eval() instead.\"}]"
+    prompt += '[{"line": 10, "pillar": "security", "comment": "Avoid eval.", "suggestion": "Use ast.literal_eval() instead."}]'
+
     return prompt
