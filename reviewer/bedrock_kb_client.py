@@ -13,8 +13,8 @@ def query_rules_by_pillar(language: str, pillar: str) -> str:
                     "numberOfResults": 1,
                     "filter": {
                         "andAll": [
-                            {"equals": {"key": "language", "value": "python"}},
-                            {"equals": {"key": "pillar", "value": "security"}}
+                            {"equals": {"key": "language", "value": language}},
+                            {"equals": {"key": "pillar", "value": pillar}}
                         ]
                     }
                 }
@@ -25,5 +25,5 @@ def query_rules_by_pillar(language: str, pillar: str) -> str:
         return results[0]["content"]["text"] if results else "No rules found."
 
     except Exception as e:
-        print(f"❌ Bedrock KB retrieve failed: {e}")
+        print(f"❌ Bedrock KB retrieve failed for {language}/{pillar}: {e}")
         return ""
