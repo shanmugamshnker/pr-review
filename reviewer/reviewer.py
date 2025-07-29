@@ -72,7 +72,7 @@ def main():
             print(f"🔍 Reviewing file: {file_path}...")
 
             prompt = build_prompt(code, file_path, runtime="python")
-            fm_prompt = build_fm_prompt(code, file_path, runtime="python")
+            # fm_prompt = build_fm_prompt(code, file_path, runtime="python")
 
             if os.getenv("DRY_RUN") == "1":
                 print("📝 RAG Prompt:\n", prompt)
