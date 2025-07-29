@@ -98,24 +98,27 @@
 import boto3
 import os
 import json
-from prompt_builder import build_prompt  # ⛔️ Removed build_enhancement_prompt
+from prompt_builder import build_prompt
 
+# --- Clients ---
 bedrock_runtime = boto3.client("bedrock-agent-runtime", region_name=os.environ["BEDROCK_REGION"])
 bedrock_client = boto3.client("bedrock-runtime", region_name=os.environ["BEDROCK_REGION"])
 
+# --- Hybrid Review Logic ---
 def hybrid_review(code: str, file_path: str, runtime: str = "python") -> list:
     prompt = build_prompt(code, file_path, runtime)
 
-    # Call Knowledge Base + Foundation Model together (retrieve-and-generate)
+    # Step 1: Try Knowledge Base + FM together
     rag_fm_comments = call_bedrock_with_kb(prompt)
 
     if rag_fm_comments:
         return rag_fm_comments
 
-    # Fallback to direct FM prompt
+    # Step 2: Fallback to direct FM prompt
     return call_foundation_model(prompt)
 
 
+# --- Bedrock Agent Runtime (RAG + FM) ---
 def call_bedrock_with_kb(prompt: str) -> list:
     try:
         response = bedrock_runtime.retrieve_and_generate(
@@ -134,10 +137,11 @@ def call_bedrock_with_kb(prompt: str) -> list:
         output = response.get("output", {}).get("text", "")
         return parse_comments(output)
     except Exception as e:
-        print("❌ RAG failed:", e)
+        print("❌ RAG retrieve_and_generate failed:", e)
         return []
 
 
+# --- Bedrock Direct Foundation Model (FM-only) ---
 def call_foundation_model(prompt: str) -> list:
     try:
         response = bedrock_client.invoke_model(
@@ -147,21 +151,41 @@ def call_foundation_model(prompt: str) -> list:
             accept="application/json"
         )
         data = json.loads(response["body"].read())
-        return parse_comments(data.get("completion") or data.get("output") or "")
+        raw_output = data.get("completion") or data.get("output") or ""
+        return parse_comments(raw_output)
     except Exception as e:
-        print("❌ FM failed:", e)
+        print("❌ FM invoke_model failed:", e)
         return []
 
 
+# --- Robust JSON Parsing ---
 def parse_comments(text: str) -> list:
+    print("📤 Raw FM Output:\n", text)  # ✅ See raw FM response
+
     try:
         return json.loads(text)
-    except Exception:
-        print("⚠️ JSON parse failed")
-        return [{
-            "line": 10,
-            "pillar": "security",
-            "comment": "Avoid using eval().",
-            "suggestion": "Use ast.literal_eval()."
-        }]
+    except json.JSONDecodeError as e:
+        print("⚠️ JSON parse failed:", e)
 
+        try:
+            # Basic auto-fix attempt
+            fixed = text.replace("‘", "'").replace("’", "'") \
+                        .replace("“", '"').replace("”", '"') \
+                        .replace("None", "null").replace("\n", "") \
+                        .strip()
+
+            # If missing closing bracket
+            if not fixed.endswith("]"):
+                fixed += "]"
+
+            return json.loads(fixed)
+        except Exception as e2:
+            print("⚠️ Auto-fix also failed:", e2)
+
+    # Final fallback
+    return [{
+        "line": 10,
+        "pillar": "security",
+        "comment": "Avoid using eval().",
+        "suggestion": "Use ast.literal_eval()."
+    }]
