@@ -95,27 +95,24 @@
 #             }
 #         ]
 
-
 import boto3
 import os
 import json
-from prompt_builder import build_prompt, build_enhancement_prompt
+from prompt_builder import build_prompt  # ⛔️ Removed build_enhancement_prompt
 
 bedrock_runtime = boto3.client("bedrock-agent-runtime", region_name=os.environ["BEDROCK_REGION"])
 bedrock_client = boto3.client("bedrock-runtime", region_name=os.environ["BEDROCK_REGION"])
 
 def hybrid_review(code: str, file_path: str, runtime: str = "python") -> list:
     prompt = build_prompt(code, file_path, runtime)
-    rag_comments = call_bedrock_with_kb(prompt)
 
-    if rag_comments:
-        enhanced = []
-        for comment in rag_comments:
-            enhancement_prompt = build_enhancement_prompt(comment, code, runtime)
-            fm_comment = call_foundation_model(enhancement_prompt)
-            enhanced.append(fm_comment[0] if fm_comment else comment)
-        return enhanced
+    # Call Knowledge Base + Foundation Model together (retrieve-and-generate)
+    rag_fm_comments = call_bedrock_with_kb(prompt)
 
+    if rag_fm_comments:
+        return rag_fm_comments
+
+    # Fallback to direct FM prompt
     return call_foundation_model(prompt)
 
 
@@ -167,3 +164,4 @@ def parse_comments(text: str) -> list:
             "comment": "Avoid using eval().",
             "suggestion": "Use ast.literal_eval()."
         }]
+
