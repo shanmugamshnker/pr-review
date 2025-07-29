@@ -4,7 +4,7 @@ from prompt_builder import build_prompt
 from llm_client import (
     call_bedrock_with_kb,
     call_foundation_model,
-    build_fm_prompt
+    build_prompt
 )
 from github_client import post_inline_comment
 
