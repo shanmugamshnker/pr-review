@@ -76,12 +76,12 @@ def main():
 
             if os.getenv("DRY_RUN") == "1":
                 print("📝 RAG Prompt:\n", prompt)
-                print("🧠 FM Prompt:\n", fm_prompt)
+                print("🧠 FM Prompt:\n", prompt)
                 continue
 
             comments = []
             comments += call_bedrock_with_kb(prompt)
-            comments += call_foundation_model(fm_prompt)
+            comments += call_foundation_model(prompt)
 
             for comment in comments:
                 try:
