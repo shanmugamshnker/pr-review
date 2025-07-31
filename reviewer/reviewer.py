@@ -1,6 +1,5 @@
 import os
 import subprocess
-from prompt_builder import build_prompt_with_rules
 from llm_client import hybrid_review
 from github_client import post_inline_comment
 
@@ -67,16 +66,7 @@ def main():
             code = "\n".join(data["lines"])
             print(f"🔍 Reviewing file: {file_path}...")
 
-            prompt = build_prompt_with_rules(code, file_path, runtime="python")
-
-            if os.getenv("DRY_RUN") == "1":
-                print("📝 RAG Prompt:\n", prompt)
-                print("🧠 FM Prompt:\n", prompt)
-                continue
-
-            comments = []
-            comments += call_bedrock_with_kb(prompt)
-            comments += call_foundation_model(prompt)
+            comments = hybrid_review(code, file_path, runtime="python")
 
             for comment in comments:
                 try:
