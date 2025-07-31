@@ -1,11 +1,7 @@
 import os
 import subprocess
 from prompt_builder import build_prompt
-from llm_client import (
-    call_bedrock_with_kb,
-    call_foundation_model,
-    build_prompt
-)
+from llm_client import hybrid_review
 from github_client import post_inline_comment
 
 def get_files_to_review():
