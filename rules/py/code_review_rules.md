@@ -1,4 +1,4 @@
-# 📘 AI Code Reviewer: Enterprise Rulebook
+# 📘 AI Code Review Rules
 
 This markdown document defines code review rules used in the hybrid RAG + FM-based AI code reviewer.
 Rules are grouped by pillar and follow a structured format: `Rule ID`, `Pattern`, `Explanation`, and `Comment Prompt`.
