@@ -18,7 +18,9 @@ def hybrid_review(code: str, file_path: str, runtime: str = "python") -> list:
         logging.info("🔍 Starting hybrid review for %s", file_path)
 
         rules_block = query_rules_by_language(runtime)
-        if not rules_block.strip():
+        logging.info("📚 RAG rule block (raw):\n%s", rules_block)
+
+        if not rules_block.strip() or "no rules found" in rules_block.lower():
             logging.warning("⚠️ No rules returned by RAG. Defaulting to general best practices.")
             rules_block = """
 ### GEN001: General Best Practices
