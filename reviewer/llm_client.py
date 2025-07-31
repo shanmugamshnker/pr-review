@@ -18,6 +18,15 @@ def hybrid_review(code: str, file_path: str, runtime: str = "python") -> list:
         logging.info("🔍 Starting hybrid review for %s", file_path)
 
         rules_block = query_rules_by_language(runtime)
+        if not rules_block.strip():
+            logging.warning("⚠️ No rules returned by RAG. Defaulting to general best practices.")
+            rules_block = """
+### GEN001: General Best Practices
+- **Pattern**: Any
+- **Explanation**: No enterprise rules were returned by the knowledge base. Falling back to general engineering standards used by Amazon, Microsoft, Google, OpenAI, and Perplexity.
+- **Comment Prompt**: "No organizational rule found. This recommendation is based on trusted industry best practices and internal engineering principles."
+"""
+
         cleaned_rules = sanitize_markdown_rules(rules_block)
         prompt = build_prompt_with_rules(code, file_path, cleaned_rules, runtime)
 
