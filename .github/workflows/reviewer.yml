@@ -38,7 +38,7 @@ jobs:
           BEDROCK_MODEL_ID: ${{ secrets.BEDROCK_MODEL_ID }}
           KNOWLEDGE_BASE_ID: ${{ secrets.KNOWLEDGE_BASE_ID }}
           BEDROCK_INFERENCE_ARN: ${{ secrets.BEDROCK_INFERENCE_ARN }}
-
+          DRY_RUN: "1"
           PAT: ${{ secrets.PAT }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_PR_NUMBER: ${{ github.event.pull_request.number }}
