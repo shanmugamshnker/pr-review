@@ -4,7 +4,7 @@ import json
 import logging
 import re
 from prompt_builder import build_prompt_with_rules, sanitize_markdown_rules
-from bedrock_kb_client import query_rules_by_pillar
+from bedrock_kb_client import query_rules_by_language
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -17,7 +17,7 @@ def hybrid_review(code: str, file_path: str, runtime: str = "python") -> list:
     try:
         logging.info("🔍 Starting hybrid review for %s", file_path)
 
-        rules_block = get_combined_rules(runtime)
+        rules_block = query_rules_by_language(runtime)
         cleaned_rules = sanitize_markdown_rules(rules_block)
         prompt = build_prompt_with_rules(code, file_path, cleaned_rules, runtime)
 
@@ -30,24 +30,6 @@ def hybrid_review(code: str, file_path: str, runtime: str = "python") -> list:
     except Exception as e:
         logging.error("❌ Hybrid review failed for %s: %s", file_path, str(e))
         return []
-
-
-def get_combined_rules(runtime: str) -> str:
-    logging.info("📚 Retrieving rules for runtime: %s", runtime)
-    pillars = ["security", "style", "readability", "best_practices"]
-    all_rules = ""
-    for pillar in pillars:
-        rules = query_rules_by_pillar(runtime, pillar)
-        all_rules += f"\n[{pillar.upper()} RULES]\n{rules}\n"
-    return all_rules.strip()
-
-
-def sanitize_markdown_rules(markdown: str) -> str:
-    markdown = re.sub(r"^#{1,2} .*", "", markdown, flags=re.MULTILINE)
-    markdown = markdown.replace("* ", "- ")
-    markdown = re.sub(r"<[^>]+>", "", markdown)
-    markdown = re.sub(r"\n{3,}", "\n\n", markdown)
-    return markdown.strip()
 
 
 # --- Bedrock Foundation Model (FM-only) ---
